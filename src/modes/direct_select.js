@@ -86,10 +86,56 @@ DirectSelect.dragFeature = function (state, e, delta) {
 };
 
 DirectSelect.dragVertex = function (state, e, delta) {
-  alert("test");
   const selectedCoords = state.selectedCoordPaths.map((coord_path) =>
     state.feature.getCoordinate(coord_path)
   );
+
+  if (state.selectedCoordPaths == "0.0") {
+    state.feature.updateCoordinate(
+      "0.1",
+      state.feature.getCoordinate("0.1")[0],
+      selectedCoords[0][1]
+    );
+    state.feature.updateCoordinate(
+      "0.3",
+      selectedCoords[0][0],
+      state.feature.getCoordinate("0.3")[1]
+    );
+  } else if (state.selectedCoordPaths == "0.1") {
+    state.feature.updateCoordinate(
+      "0.0",
+      state.feature.getCoordinate("0.0")[0],
+      selectedCoords[0][1]
+    );
+    state.feature.updateCoordinate(
+      "0.2",
+      selectedCoords[0][0],
+      state.feature.getCoordinate("0.2")[1]
+    );
+  } else if (state.selectedCoordPaths == "0.2") {
+    state.feature.updateCoordinate(
+      "0.3",
+      state.feature.getCoordinate("0.3")[0],
+      selectedCoords[0][1]
+    );
+    state.feature.updateCoordinate(
+      "0.1",
+      selectedCoords[0][0],
+      state.feature.getCoordinate("0.1")[1]
+    );
+  } else if (state.selectedCoordPaths == "0.3") {
+    state.feature.updateCoordinate(
+      "0.2",
+      state.feature.getCoordinate("0.2")[0],
+      selectedCoords[0][1]
+    );
+    state.feature.updateCoordinate(
+      "0.0",
+      selectedCoords[0][0],
+      state.feature.getCoordinate("0.0")[1]
+    );
+  }
+
   const selectedCoordPoints = selectedCoords.map((coords) => ({
     type: Constants.geojsonTypes.FEATURE,
     properties: {},
