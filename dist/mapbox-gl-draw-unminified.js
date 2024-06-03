@@ -4362,8 +4362,56 @@ DirectSelect.dragFeature = function (state, e, delta) {
 DirectSelect.dragVertex = function (state, e, delta) {
   var selectedCoords = state.selectedCoordPaths.map(function (coord_path) { return state.feature.getCoordinate(coord_path); }
   );
+  var isAspectRatioLock = localStorage.getItem("isAspectRatioLock");
+  console.log({ isAspectRatioLock: isAspectRatioLock, state: state });
+  if (isAspectRatioLock && isAspectRatioLock == "true") {
+    if (state.selectedCoordPaths == "0.0") {
+      state.feature.updateCoordinate(
+        "0.1",
+        state.feature.getCoordinate("0.1")[0],
+        selectedCoords[0][1]
+      );
+      state.feature.updateCoordinate(
+        "0.3",
+        selectedCoords[0][0],
+        state.feature.getCoordinate("0.3")[1]
+      );
+    } else if (state.selectedCoordPaths == "0.1") {
+      state.feature.updateCoordinate(
+        "0.0",
+        state.feature.getCoordinate("0.0")[0],
+        selectedCoords[0][1]
+      );
+      state.feature.updateCoordinate(
+        "0.2",
+        selectedCoords[0][0],
+        state.feature.getCoordinate("0.2")[1]
+      );
+    } else if (state.selectedCoordPaths == "0.2") {
+      state.feature.updateCoordinate(
+        "0.3",
+        state.feature.getCoordinate("0.3")[0],
+        selectedCoords[0][1]
+      );
+      state.feature.updateCoordinate(
+        "0.1",
+        selectedCoords[0][0],
+        state.feature.getCoordinate("0.1")[1]
+      );
+    } else if (state.selectedCoordPaths == "0.3") {
+      state.feature.updateCoordinate(
+        "0.2",
+        state.feature.getCoordinate("0.2")[0],
+        selectedCoords[0][1]
+      );
+      state.feature.updateCoordinate(
+        "0.0",
+        selectedCoords[0][0],
+        state.feature.getCoordinate("0.0")[1]
+      );
+    }
+  }
 
-  // Create GeoJSON point features from selected coordinates
   var selectedCoordPoints = selectedCoords.map(function (coords) { return ({
     type: geojsonTypes.FEATURE,
     properties: {},
@@ -4372,11 +4420,7 @@ DirectSelect.dragVertex = function (state, e, delta) {
       coordinates: coords,
     },
   }); });
-
-  // Constrain the movement of the feature if needed
   var constrainedDelta = constrainFeatureMovement(selectedCoordPoints, delta);
-
-  // Update coordinates for all selected paths
   for (var i = 0; i < selectedCoords.length; i++) {
     var coord = selectedCoords[i];
     state.feature.updateCoordinate(
