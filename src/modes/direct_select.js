@@ -89,9 +89,8 @@ DirectSelect.dragVertex = function (state, e, delta) {
   const selectedCoords = state.selectedCoordPaths.map((coord_path) =>
     state.feature.getCoordinate(coord_path)
   );
-  let isAspectRatioLock = localStorage.getItem("isAspectRatioLock");
-  console.log({ isAspectRatioLock, state });
-  if (isAspectRatioLock && isAspectRatioLock == "true") {
+
+  if (state.feature.properties.lockAspectRatio) {
     if (state.selectedCoordPaths == "0.0") {
       state.feature.updateCoordinate(
         "0.1",

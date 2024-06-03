@@ -4362,9 +4362,8 @@ DirectSelect.dragFeature = function (state, e, delta) {
 DirectSelect.dragVertex = function (state, e, delta) {
   var selectedCoords = state.selectedCoordPaths.map(function (coord_path) { return state.feature.getCoordinate(coord_path); }
   );
-  var isAspectRatioLock = localStorage.getItem("isAspectRatioLock");
-  console.log({ isAspectRatioLock: isAspectRatioLock, state: state });
-  if (isAspectRatioLock && isAspectRatioLock == "true") {
+
+  if (state.feature.properties.lockAspectRatio) {
     if (state.selectedCoordPaths == "0.0") {
       state.feature.updateCoordinate(
         "0.1",
