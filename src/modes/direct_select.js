@@ -90,51 +90,28 @@ DirectSelect.dragVertex = function (state, e, delta) {
     state.feature.getCoordinate(coord_path)
   );
 
-  // Calculate centroid
-  const centroid = selectedCoords.reduce(
-    (acc, curr) => [
-      acc[0] + curr[0] / selectedCoords.length,
-      acc[1] + curr[1] / selectedCoords.length,
-    ],
-    [0, 0]
-  );
+  // Create GeoJSON point features from selected coordinates
+  const selectedCoordPoints = selectedCoords.map((coords) => ({
+    type: Constants.geojsonTypes.FEATURE,
+    properties: {},
+    geometry: {
+      type: Constants.geojsonTypes.POINT,
+      coordinates: coords,
+    },
+  }));
 
-  // Calculate displacement of mouse cursor from centroid
-  const displacement = {
-    x: delta.lng,
-    y: delta.lat,
-  };
+  // Constrain the movement of the feature if needed
+  const constrainedDelta = constrainFeatureMovement(selectedCoordPoints, delta);
 
-  // Determine direction of movement
-  const direction =
-    Math.abs(displacement.x) > Math.abs(displacement.y)
-      ? "horizontal"
-      : "vertical";
-
-  // Calculate aspect ratio
-  const aspectRatio = 1; // Modify this value according to your aspect ratio
-
-  // Calculate new coordinates for all vertices
-  const newCoords = selectedCoords.map((coord) => {
-    let newX, newY;
-    if (direction === "horizontal") {
-      newX = coord[0] + displacement.x;
-      newY = centroid[1] + (newX - centroid[0]) / aspectRatio;
-    } else {
-      newY = coord[1] + displacement.y;
-      newX = centroid[0] + (newY - centroid[1]) * aspectRatio;
-    }
-    return [newX, newY];
-  });
-
-  // Update coordinates
-  newCoords.forEach((coord, index) => {
+  // Update coordinates for all selected paths
+  for (let i = 0; i < selectedCoords.length; i++) {
+    const coord = selectedCoords[i];
     state.feature.updateCoordinate(
-      state.selectedCoordPaths[index],
-      coord[0],
-      coord[1]
+      state.selectedCoordPaths[i],
+      coord[0] + constrainedDelta.lng,
+      coord[1] + constrainedDelta.lat
     );
-  });
+  }
 };
 
 DirectSelect.clickNoTarget = function () {
