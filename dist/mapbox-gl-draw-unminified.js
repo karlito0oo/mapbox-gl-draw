@@ -4363,70 +4363,50 @@ DirectSelect.dragVertex = function (state, e, delta) {
   var selectedCoords = state.selectedCoordPaths.map(function (coord_path) { return state.feature.getCoordinate(coord_path); }
   );
 
-  if (state.selectedCoordPaths == "0.0") {
-    state.feature.updateCoordinate(
-      "0.1",
-      state.feature.getCoordinate("0.1")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.3",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.3")[1]
-    );
-  } else if (state.selectedCoordPaths == "0.1") {
-    state.feature.updateCoordinate(
-      "0.0",
-      state.feature.getCoordinate("0.0")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.2",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.2")[1]
-    );
-  } else if (state.selectedCoordPaths == "0.2") {
-    state.feature.updateCoordinate(
-      "0.3",
-      state.feature.getCoordinate("0.3")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.1",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.1")[1]
-    );
-  } else if (state.selectedCoordPaths == "0.3") {
-    state.feature.updateCoordinate(
-      "0.2",
-      state.feature.getCoordinate("0.2")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.0",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.0")[1]
-    );
-  }
+  // Calculate centroid
+  var centroid = selectedCoords.reduce(
+    function (acc, curr) { return [
+      acc[0] + curr[0] / selectedCoords.length,
+      acc[1] + curr[1] / selectedCoords.length ]; },
+    [0, 0]
+  );
 
-  var selectedCoordPoints = selectedCoords.map(function (coords) { return ({
-    type: geojsonTypes.FEATURE,
-    properties: {},
-    geometry: {
-      type: geojsonTypes.POINT,
-      coordinates: coords,
-    },
-  }); });
+  // Calculate displacement of mouse cursor from centroid
+  var displacement = {
+    x: delta.lng,
+    y: delta.lat,
+  };
 
-  var constrainedDelta = constrainFeatureMovement(selectedCoordPoints, delta);
-  for (var i = 0; i < selectedCoords.length; i++) {
-    var coord = selectedCoords[i];
+  // Determine direction of movement
+  var direction =
+    Math.abs(displacement.x) > Math.abs(displacement.y)
+      ? "horizontal"
+      : "vertical";
+
+  // Calculate aspect ratio
+  var aspectRatio = 1; // Modify this value according to your aspect ratio
+
+  // Calculate new coordinates for all vertices
+  var newCoords = selectedCoords.map(function (coord) {
+    var newX, newY;
+    if (direction === "horizontal") {
+      newX = coord[0] + displacement.x;
+      newY = centroid[1] + (newX - centroid[0]) / aspectRatio;
+    } else {
+      newY = coord[1] + displacement.y;
+      newX = centroid[0] + (newY - centroid[1]) * aspectRatio;
+    }
+    return [newX, newY];
+  });
+
+  // Update coordinates
+  newCoords.forEach(function (coord, index) {
     state.feature.updateCoordinate(
-      state.selectedCoordPaths[i],
-      coord[0] + constrainedDelta.lng,
-      coord[1] + constrainedDelta.lat
+      state.selectedCoordPaths[index],
+      coord[0],
+      coord[1]
     );
-  }
+  });
 };
 
 DirectSelect.clickNoTarget = function () {

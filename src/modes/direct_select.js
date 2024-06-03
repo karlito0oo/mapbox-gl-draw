@@ -90,70 +90,51 @@ DirectSelect.dragVertex = function (state, e, delta) {
     state.feature.getCoordinate(coord_path)
   );
 
-  if (state.selectedCoordPaths == "0.0") {
-    state.feature.updateCoordinate(
-      "0.1",
-      state.feature.getCoordinate("0.1")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.3",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.3")[1]
-    );
-  } else if (state.selectedCoordPaths == "0.1") {
-    state.feature.updateCoordinate(
-      "0.0",
-      state.feature.getCoordinate("0.0")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.2",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.2")[1]
-    );
-  } else if (state.selectedCoordPaths == "0.2") {
-    state.feature.updateCoordinate(
-      "0.3",
-      state.feature.getCoordinate("0.3")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.1",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.1")[1]
-    );
-  } else if (state.selectedCoordPaths == "0.3") {
-    state.feature.updateCoordinate(
-      "0.2",
-      state.feature.getCoordinate("0.2")[0],
-      selectedCoords[0][1]
-    );
-    state.feature.updateCoordinate(
-      "0.0",
-      selectedCoords[0][0],
-      state.feature.getCoordinate("0.0")[1]
-    );
-  }
+  // Calculate centroid
+  const centroid = selectedCoords.reduce(
+    (acc, curr) => [
+      acc[0] + curr[0] / selectedCoords.length,
+      acc[1] + curr[1] / selectedCoords.length,
+    ],
+    [0, 0]
+  );
 
-  const selectedCoordPoints = selectedCoords.map((coords) => ({
-    type: Constants.geojsonTypes.FEATURE,
-    properties: {},
-    geometry: {
-      type: Constants.geojsonTypes.POINT,
-      coordinates: coords,
-    },
-  }));
+  // Calculate displacement of mouse cursor from centroid
+  const displacement = {
+    x: delta.lng,
+    y: delta.lat,
+  };
 
-  const constrainedDelta = constrainFeatureMovement(selectedCoordPoints, delta);
-  for (let i = 0; i < selectedCoords.length; i++) {
-    const coord = selectedCoords[i];
+  // Determine direction of movement
+  const direction =
+    Math.abs(displacement.x) > Math.abs(displacement.y)
+      ? "horizontal"
+      : "vertical";
+
+  // Calculate aspect ratio
+  const aspectRatio = 1; // Modify this value according to your aspect ratio
+
+  // Calculate new coordinates for all vertices
+  const newCoords = selectedCoords.map((coord) => {
+    let newX, newY;
+    if (direction === "horizontal") {
+      newX = coord[0] + displacement.x;
+      newY = centroid[1] + (newX - centroid[0]) / aspectRatio;
+    } else {
+      newY = coord[1] + displacement.y;
+      newX = centroid[0] + (newY - centroid[1]) * aspectRatio;
+    }
+    return [newX, newY];
+  });
+
+  // Update coordinates
+  newCoords.forEach((coord, index) => {
     state.feature.updateCoordinate(
-      state.selectedCoordPaths[i],
-      coord[0] + constrainedDelta.lng,
-      coord[1] + constrainedDelta.lat
+      state.selectedCoordPaths[index],
+      coord[0],
+      coord[1]
     );
-  }
+  });
 };
 
 DirectSelect.clickNoTarget = function () {
