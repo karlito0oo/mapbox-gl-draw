@@ -4655,14 +4655,14 @@ function isEventAtCoordinates(event, coordinates) {
 
 var DrawPolygon = {};
 
-DrawPolygon.onSetup = function() {
+DrawPolygon.onSetup = function () {
   var polygon = this.newFeature({
     type: geojsonTypes.FEATURE,
     properties: {},
     geometry: {
       type: geojsonTypes.POLYGON,
-      coordinates: [[]]
-    }
+      coordinates: [[]],
+    },
   });
 
   this.addFeature(polygon);
@@ -4672,51 +4672,126 @@ DrawPolygon.onSetup = function() {
   this.updateUIClasses({ mouse: cursors.ADD });
   this.activateUIButton(types$1.POLYGON);
   this.setActionableState({
-    trash: true
+    trash: true,
   });
 
   return {
     polygon: polygon,
-    currentVertexPosition: 0
+    currentVertexPosition: 0,
   };
 };
 
-DrawPolygon.clickAnywhere = function(state, e) {
-  if (state.currentVertexPosition > 0 && isEventAtCoordinates(e, state.polygon.coordinates[0][state.currentVertexPosition - 1])) {
-    return this.changeMode(modes$1.SIMPLE_SELECT, { featureIds: [state.polygon.id] });
+DrawPolygon.clickAnywhere = function (state, e) {
+  if (
+    state.currentVertexPosition > 0 &&
+    isEventAtCoordinates(
+      e,
+      state.polygon.coordinates[0][state.currentVertexPosition - 1]
+    )
+  ) {
+    return this.changeMode(modes$1.SIMPLE_SELECT, {
+      featureIds: [state.polygon.id],
+    });
   }
   this.updateUIClasses({ mouse: cursors.ADD });
-  state.polygon.updateCoordinate(("0." + (state.currentVertexPosition)), e.lngLat.lng, e.lngLat.lat);
+  state.polygon.updateCoordinate(
+    ("0." + (state.currentVertexPosition)),
+    e.lngLat.lng,
+    e.lngLat.lat
+  );
   state.currentVertexPosition++;
-  state.polygon.updateCoordinate(("0." + (state.currentVertexPosition)), e.lngLat.lng, e.lngLat.lat);
+  state.polygon.updateCoordinate(
+    ("0." + (state.currentVertexPosition)),
+    e.lngLat.lng,
+    e.lngLat.lat
+  );
 };
 
-DrawPolygon.clickOnVertex = function(state) {
-  return this.changeMode(modes$1.SIMPLE_SELECT, { featureIds: [state.polygon.id] });
+DrawPolygon.clickOnVertex = function (state) {
+  return this.changeMode(modes$1.SIMPLE_SELECT, {
+    featureIds: [state.polygon.id],
+  });
 };
 
-DrawPolygon.onMouseMove = function(state, e) {
-  state.polygon.updateCoordinate(("0." + (state.currentVertexPosition)), e.lngLat.lng, e.lngLat.lat);
+DrawPolygon.onMouseMove = function (state, e) {
+  state.polygon.updateCoordinate(
+    ("0." + (state.currentVertexPosition)),
+    e.lngLat.lng,
+    e.lngLat.lat
+  );
   if (isVertex$1(e)) {
     this.updateUIClasses({ mouse: cursors.POINTER });
   }
+
+  if (!state.currentVertexPosition) { return; }
+  var coordinates = state.polygon.coordinates[0];
+
+  var sidesMeasurements = [];
+
+  var currentMouseLoc = [e.lngLat.lng, e.lngLat.lat]; // Corrected order
+
+  if (coordinates.length > 1) {
+    for (var i = 0; i < coordinates.length - 1; i++) {
+      var startPoint = coordinates[i];
+      var endPoint =
+        i == coordinates.length - 2 ? currentMouseLoc : coordinates[i + 1]; // Adjust endpoint for the last vertex
+
+      var distanceSide = turf.distance(startPoint, endPoint, {
+        units: "feet",
+      });
+
+      sidesMeasurements.push(distanceSide.toFixed(2) + " ft");
+    }
+  }
+
+  var map = this.map;
+  if (map && map.getSource("measurement-point")) {
+    map.getSource("measurement-point").setData({
+      type: "FeatureCollection",
+      features: coordinates.slice(0, -1).map(function (coord, index) {
+        var midpoint = [
+          (coord[0] +
+            (index === coordinates.length - 2
+              ? currentMouseLoc[0]
+              : coordinates[index + 1][0])) /
+            2,
+          (coord[1] +
+            (index === coordinates.length - 2
+              ? currentMouseLoc[1]
+              : coordinates[index + 1][1])) /
+            2 ];
+        return {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: midpoint,
+          },
+          properties: {
+            measurement: sidesMeasurements[index],
+          },
+        };
+      }),
+    });
+  }
 };
 
-DrawPolygon.onTap = DrawPolygon.onClick = function(state, e) {
+DrawPolygon.onTap = DrawPolygon.onClick = function (state, e) {
   if (isVertex$1(e)) { return this.clickOnVertex(state, e); }
   return this.clickAnywhere(state, e);
 };
 
-DrawPolygon.onKeyUp = function(state, e) {
+DrawPolygon.onKeyUp = function (state, e) {
   if (isEscapeKey(e)) {
     this.deleteFeature([state.polygon.id], { silent: true });
     this.changeMode(modes$1.SIMPLE_SELECT);
   } else if (isEnterKey(e)) {
-    this.changeMode(modes$1.SIMPLE_SELECT, { featureIds: [state.polygon.id] });
+    this.changeMode(modes$1.SIMPLE_SELECT, {
+      featureIds: [state.polygon.id],
+    });
   }
 };
 
-DrawPolygon.onStop = function(state) {
+DrawPolygon.onStop = function (state) {
   this.updateUIClasses({ mouse: cursors.NONE });
   doubleClickZoom.enable(this);
   this.activateUIButton();
@@ -4728,7 +4803,7 @@ DrawPolygon.onStop = function(state) {
   state.polygon.removeCoordinate(("0." + (state.currentVertexPosition)));
   if (state.polygon.isValid()) {
     this.map.fire(events$1.CREATE, {
-      features: [state.polygon.toGeoJSON()]
+      features: [state.polygon.toGeoJSON()],
     });
   } else {
     this.deleteFeature([state.polygon.id], { silent: true });
@@ -4736,9 +4811,11 @@ DrawPolygon.onStop = function(state) {
   }
 };
 
-DrawPolygon.toDisplayFeatures = function(state, geojson, display) {
+DrawPolygon.toDisplayFeatures = function (state, geojson, display) {
   var isActivePolygon = geojson.properties.id === state.polygon.id;
-  geojson.properties.active = (isActivePolygon) ? activeStates.ACTIVE : activeStates.INACTIVE;
+  geojson.properties.active = isActivePolygon
+    ? activeStates.ACTIVE
+    : activeStates.INACTIVE;
   if (!isActivePolygon) { return display(geojson); }
 
   // Don't render a polygon until it has two positions
@@ -4752,27 +4829,45 @@ DrawPolygon.toDisplayFeatures = function(state, geojson, display) {
     return;
   }
   geojson.properties.meta = meta.FEATURE;
-  display(createVertex(state.polygon.id, geojson.geometry.coordinates[0][0], '0.0', false));
+  display(
+    createVertex(
+      state.polygon.id,
+      geojson.geometry.coordinates[0][0],
+      "0.0",
+      false
+    )
+  );
   if (coordinateCount > 3) {
     // Add a start position marker to the map, clicking on this will finish the feature
     // This should only be shown when we're in a valid spot
     var endPos = geojson.geometry.coordinates[0].length - 3;
-    display(createVertex(state.polygon.id, geojson.geometry.coordinates[0][endPos], ("0." + endPos), false));
+    display(
+      createVertex(
+        state.polygon.id,
+        geojson.geometry.coordinates[0][endPos],
+        ("0." + endPos),
+        false
+      )
+    );
   }
   if (coordinateCount <= 4) {
     // If we've only drawn two positions (plus the closer),
     // make a LineString instead of a Polygon
     var lineCoordinates = [
-      [geojson.geometry.coordinates[0][0][0], geojson.geometry.coordinates[0][0][1]], [geojson.geometry.coordinates[0][1][0], geojson.geometry.coordinates[0][1][1]]
-    ];
+      [
+        geojson.geometry.coordinates[0][0][0],
+        geojson.geometry.coordinates[0][0][1] ],
+      [
+        geojson.geometry.coordinates[0][1][0],
+        geojson.geometry.coordinates[0][1][1] ] ];
     // create an initial vertex so that we can track the first point on mobile devices
     display({
       type: geojsonTypes.FEATURE,
       properties: geojson.properties,
       geometry: {
         coordinates: lineCoordinates,
-        type: geojsonTypes.LINE_STRING
-      }
+        type: geojsonTypes.LINE_STRING,
+      },
     });
     if (coordinateCount === 3) {
       return;
@@ -4782,7 +4877,7 @@ DrawPolygon.toDisplayFeatures = function(state, geojson, display) {
   return display(geojson);
 };
 
-DrawPolygon.onTrash = function(state) {
+DrawPolygon.onTrash = function (state) {
   this.deleteFeature([state.polygon.id], { silent: true });
   this.changeMode(modes$1.SIMPLE_SELECT);
 };
