@@ -4,6 +4,8 @@ import * as Constants from "../constants";
 import isEventAtCoordinates from "../lib/is_event_at_coordinates";
 import createVertex from "../lib/create_vertex";
 
+import * as turf from "@turf/turf";
+
 const DrawPolygon = {};
 
 DrawPolygon.onSetup = function () {
@@ -95,7 +97,7 @@ DrawPolygon.onMouseMove = function (state, e) {
     }
   }
 
-  const map = this.map;
+  const map = newMap;
   if (map && map.getSource("measurement-point")) {
     map.getSource("measurement-point").setData({
       type: "FeatureCollection",
