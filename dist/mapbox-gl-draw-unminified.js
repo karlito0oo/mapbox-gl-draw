@@ -4879,7 +4879,7 @@ DrawPolygon.onMouseMove = function (state, e) {
     }
   }
 
-  var map = newMap;
+  var map = this.map;
   if (map && map.getSource("measurement-point")) {
     map.getSource("measurement-point").setData({
       type: "FeatureCollection",

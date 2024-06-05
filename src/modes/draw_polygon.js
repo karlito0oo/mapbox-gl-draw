@@ -97,7 +97,7 @@ DrawPolygon.onMouseMove = function (state, e) {
     }
   }
 
-  const map = newMap;
+  const map = this.map;
   if (map && map.getSource("measurement-point")) {
     map.getSource("measurement-point").setData({
       type: "FeatureCollection",
